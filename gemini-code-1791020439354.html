@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hrida - House of Exclusives | Management Dashboard</title>
+    <!-- Chart.js & DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --brand-purple: #a855f7;
+            --brand-purple-dark: #6b3074;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-gold: #d4af37;
+            --accent-blue: #3b82f6;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-dark: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-light); padding: 24px; }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 20px; border-bottom: 1px solid var(--border-dark); margin-bottom: 20px;
+        }
+        .brand-container { display: flex; align-items: center; gap: 16px; }
+        .brand-logo-img { height: 60px; width: auto; object-fit: contain; }
+        
+        .brand-text h1 { 
+            font-family: 'Cinzel', serif; 
+            color: var(--brand-purple); 
+            font-size: 34px; 
+            font-weight: 800;
+            letter-spacing: 3px; 
+            text-transform: uppercase;
+            text-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+        }
+        .brand-text p { color: var(--text-muted); font-size: 13px; margin-top: 2px; font-weight: 600; letter-spacing: 1px; }
+
+        /* Navigation Tabs */
+        .tab-bar { display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 1px solid var(--border-dark); padding-bottom: 12px; }
+        .tab-btn {
+            background: transparent; border: 1px solid var(--border-dark); color: var(--text-muted);
+            padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.3s;
+        }
+        .tab-btn.active, .tab-btn:hover { background-color: var(--brand-purple); color: #ffffff; border-color: var(--brand-purple); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* KPI Cards with Icons */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .kpi-card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-dark); 
+            border-radius: 12px; 
+            padding: 18px; 
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-header { display: flex; justify-content: space-between; align-items: center; }
+        .kpi-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+        .kpi-icon { width: 22px; height: 22px; fill: var(--brand-purple); opacity: 0.9; }
+        .kpi-value { font-size: 24px; font-weight: 700; margin-top: 8px; color: var(--text-light); }
+        .kpi-sub { font-size: 12px; margin-top: 4px; color: var(--accent-emerald); font-weight: 600; }
+
+        /* Uniform Graph Row Sizing */
+        .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; margin-bottom: 24px; }
+        .chart-card {
+            background: var(--card-bg); border: 1px solid var(--border-dark); border-radius: 12px; padding: 20px;
+            display: flex; flex-direction: column; justify-content: space-between; height: 440px;
+        }
+        .chart-card h3 { font-size: 15px; color: var(--brand-purple); margin-bottom: 12px; font-family: 'Cinzel', serif; letter-spacing: 1px; }
+        .chart-container { flex: 1; position: relative; width: 100%; height: 100%; }
+
+        /* Tables */
+        .data-table-card { background: var(--card-bg); border: 1px solid var(--border-dark); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+        .data-table-card h3 { font-size: 16px; color: var(--brand-purple); margin-bottom: 16px; font-family: 'Cinzel', serif; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background: #0f172a; color: var(--brand-purple); padding: 12px; border-bottom: 1px solid var(--border-dark); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+        td { padding: 12px; border-bottom: 1px solid var(--border-dark); color: var(--text-light); }
+        tr:hover { background: rgba(255,255,255,0.03); }
+
+        @media (max-width: 768px) { .charts-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-container">
+            <svg class="brand-logo-img" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <path d="M100 20 C110 50, 150 70, 180 100 C150 130, 110 150, 100 180 C90 150, 50 130, 20 100 C50 70, 90 50, 100 20 Z" fill="#6b3074"/>
+                <circle cx="100" cy="35" r="8" fill="#a855f7"/>
+                <circle cx="165" cy="100" r="8" fill="#a855f7"/>
+                <circle cx="100" cy="165" r="8" fill="#a855f7"/>
+                <circle cx="35" cy="100" r="8" fill="#a855f7"/>
+            </svg>
+            <div class="brand-text">
+                <h1>HRIDA</h1>
+                <p>HOUSE OF EXCLUSIVES — MANAGEMENT DASHBOARD</p>
+            </div>
+        </div>
+        <div>
+            <span style="font-size: 12px; color: var(--text-muted);">Reporting Period</span>
+            <div style="font-weight: 600; color: var(--brand-purple);">Nov 2025 – Oct 2026</div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('tab-overview')">Overview & Geography</button>
+        <button class="tab-btn" onclick="switchTab('tab-stock')">Stock & Inventory</button>
+        <button class="tab-btn" onclick="switchTab('tab-sales')">Sales & Channels</button>
+        <button class="tab-btn" onclick="switchTab('tab-overheads')">Overheads Analysis</button>
+    </div>
+
+    <!-- TAB 1: OVERVIEW & GEOGRAPHY -->
+    <div id="tab-overview" class="tab-content active">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Total Sales Revenue</span>
+                    <svg class="kpi-icon" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+                </div>
+                <div class="kpi-value">₹6,41,746</div>
+                <div class="kpi-sub">259 Items Sold</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Gross Profit</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-emerald);" viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                </div>
+                <div class="kpi-value" style="color:var(--accent-emerald);">₹3,40,646</div>
+                <div class="kpi-sub">53.08% Margin</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Stock Procurement</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-rose);" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                </div>
+                <div class="kpi-value">₹8,05,775</div>
+                <div class="kpi-sub" style="color:var(--accent-rose);">499 Items Total</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Net Operating Profit</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-gold);" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                </div>
+                <div class="kpi-value">₹40,538</div>
+                <div class="kpi-sub" style="color:var(--text-muted);">After Ad/Marketing Costs</div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>Monthly Sales & Profit Performance</h3>
+                <div class="chart-container"><canvas id="monthlyChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Top Buyer Locations (Sales vs Profit in ₹K)</h3>
+                <div class="chart-container"><canvas id="buyerLocChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>Category Performance Breakdown</h3>
+                <div class="chart-container"><canvas id="categoryChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Sourcing Capital Allocation (By Procurement City)</h3>
+                <div class="chart-container"><canvas id="sourcingCityChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: STOCK & INVENTORY ANALYSIS -->
+    <div id="tab-stock" class="tab-content">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Total Inventory Capital</span>
+                    <svg class="kpi-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                </div>
+                <div class="kpi-value">₹8,05,775</div>
+                <div class="kpi-sub">499 Total Units</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Unsold Capital Locked</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-rose);" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                </div>
+                <div class="kpi-value" style="color:var(--accent-rose);">₹5,10,160</div>
+                <div class="kpi-sub">226 Unsold Units</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Sold Capital Turnover</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-emerald);" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </div>
+                <div class="kpi-value" style="color:var(--accent-emerald);">₹2,95,615</div>
+                <div class="kpi-sub">259 Units Sold</div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>Inventory Liquidity Status by Category</h3>
+                <div class="chart-container"><canvas id="stockStatusChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Top Sourcing Vendors by Procurement Spend</h3>
+                <div class="chart-container"><canvas id="vendorSpendChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="data-table-card">
+            <h3>Inventory Breakdown Table</h3>
+            <table>
+                <thead>
+                    <tr><th>Category</th><th>Status</th><th>Quantity</th><th>Total Capital (Cost Price)</th><th>% Share of Stock</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Saree</td><td>Unsold / Available</td><td>168 units</td><td>₹4,30,619.24</td><td>53.44%</td></tr>
+                    <tr><td>Saree</td><td>Sold</td><td>143 units</td><td>₹2,51,656.17</td><td>31.23%</td></tr>
+                    <tr><td>Jewellery</td><td>Unsold / Available</td><td>12 units</td><td>₹58,241.00</td><td>7.23%</td></tr>
+                    <tr><td>Jewellery</td><td>Sold</td><td>111 units</td><td>₹41,709.00</td><td>5.18%</td></tr>
+                    <tr><td>Shirt</td><td>Unsold / Available</td><td>46 units</td><td>₹21,300.00</td><td>2.64%</td></tr>
+                    <tr><td>Shirt</td><td>Sold</td><td>5 units</td><td>₹2,250.00</td><td>0.28%</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: SALES & CHANNEL ANALYTICS -->
+    <div id="tab-sales" class="tab-content">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Top Sales Channel</span>
+                    <svg class="kpi-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                </div>
+                <div class="kpi-value">Known Contacts</div>
+                <div class="kpi-sub">₹3.68L Revenue (57.4%)</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Website Direct Sales</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-blue);" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.89 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                </div>
+                <div class="kpi-value">₹1,10,974</div>
+                <div class="kpi-sub">47 Orders | 52.3% Margin</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Highest Margin Product</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-gold);" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </div>
+                <div class="kpi-value">Jewellery</div>
+                <div class="kpi-sub">68.67% Gross Margin</div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>Revenue Share by Sales Channel</h3>
+                <div class="chart-container"><canvas id="channelChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Top 5 Product Collections by Sales</h3>
+                <div class="chart-container"><canvas id="topProductsChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="data-table-card">
+            <h3>Sales Channel Performance Table</h3>
+            <table>
+                <thead>
+                    <tr><th>Channel</th><th>Quantity Sold</th><th>Total Revenue</th><th>Total COGS</th><th>Gross Profit</th><th>Margin %</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Known / Direct Contacts</td><td>150</td><td>₹3,68,686.20</td><td>₹1,73,804.45</td><td>₹1,94,881.75</td><td>52.86%</td></tr>
+                    <tr><td>Website</td><td>47</td><td>₹1,10,974.10</td><td>₹54,264.73</td><td>₹56,709.37</td><td>51.10%</td></tr>
+                    <tr><td>WhatsApp & Broadcasts</td><td>41</td><td>₹1,05,387.10</td><td>₹46,079.63</td><td>₹59,307.47</td><td>56.28%</td></tr>
+                    <tr><td>In Person / Boutique Store</td><td>5</td><td>₹28,298.00</td><td>₹13,755.96</td><td>₹14,542.04</td><td>51.39%</td></tr>
+                    <tr><td>Instagram Direct</td><td>9</td><td>₹23,247.00</td><td>₹10,739.94</td><td>₹12,507.06</td><td>53.80%</td></tr>
+                    <tr><td>Sharadotsav Event</td><td>5</td><td>₹4,750.00</td><td>₹2,345.00</td><td>₹2,405.00</td><td>50.63%</td></tr>
+                    <tr><td>Meta Ads</td><td>2</td><td>₹498.00</td><td>₹109.96</td><td>₹288.04</td><td>57.84%</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 4: OVERHEADS ANALYSIS -->
+    <div id="tab-overheads" class="tab-content">
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Total Overheads</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-amber);" viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                </div>
+                <div class="kpi-value" style="color:var(--accent-amber);">₹3,00,108</div>
+                <div class="kpi-sub" style="color:var(--text-muted);">18 Total Transactions</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Marketing & Ads Spend</span>
+                    <svg class="kpi-icon" style="fill:var(--brand-purple);" viewBox="0 0 24 24"><path d="M18 11v5l-2-1V9l2-2v4zm-4-6l-2 1v12l2 1V5zm-8 5v4h2l3 3V7L6 10H4v4h2z"/></svg>
+                </div>
+                <div class="kpi-value">₹2,42,800</div>
+                <div class="kpi-sub">80.9% of Overheads</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Packaging & Supplies</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-rose);" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                </div>
+                <div class="kpi-value">₹9,250</div>
+                <div class="kpi-sub">3.1% of Overheads</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Domain & Infrastructure</span>
+                    <svg class="kpi-icon" style="fill:var(--accent-blue);" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.89 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                </div>
+                <div class="kpi-value">₹8,658</div>
+                <div class="kpi-sub">Wix & Shopify Subscription</div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>Overheads Breakdown by Source / Vendor</h3>
+                <div class="chart-container"><canvas id="overheadsVendorChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Overheads Breakdown by Expense Purpose (in ₹K)</h3>
+                <div class="chart-container"><canvas id="overheadsPurposeChart"></canvas></div>
+            </div>
+        </div>
+
+        <div class="data-table-card">
+            <h3>Itemized Overheads Ledger</h3>
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Source / Vendor</th><th>Particulars</th><th>Category</th><th>Amount (₹)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>2026-06-17</td><td>Lynx eye digital marketing</td><td>Monthly charges</td><td>Digital Marketing</td><td>₹30,000</td></tr>
+                    <tr><td>2026-07-01</td><td>Amazon</td><td>Saree boxes</td><td>Packaging Supplies</td><td>₹550</td></tr>
+                    <tr><td>2026-06-15</td><td>Wix</td><td>Hrida.com domain renewal</td><td>IT & Hosting</td><td>₹7,150</td></tr>
+                    <tr><td>2026-07-08</td><td>Lynx eye digital marketing</td><td>Meta Ads management</td><td>Paid Advertising</td><td>₹10,000</td></tr>
+                    <tr><td>2026-07-17</td><td>Lynx eye digital marketing</td><td>Monthly charges</td><td>Digital Marketing</td><td>₹30,000</td></tr>
+                    <tr><td>2026-07-23</td><td>Lynx eye digital marketing</td><td>Video editing (6)</td><td>Content Creation</td><td>₹4,800</td></tr>
+                    <tr><td>2026-07-23</td><td>Meta</td><td>Ad payment</td><td>Paid Advertising</td><td>₹36,000</td></tr>
+                    <tr><td>2026-07-23</td><td>BM Enterprise</td><td>Jewellery Box</td><td>Packaging Supplies</td><td>₹6,000</td></tr>
+                    <tr><td>2026-08-17</td><td>Lynx eye digital marketing</td><td>Monthly charges</td><td>Digital Marketing</td><td>₹30,000</td></tr>
+                    <tr><td>2026-08-23</td><td>Meta</td><td>Ad payment</td><td>Paid Advertising</td><td>₹36,000</td></tr>
+                    <tr><td>2026-09-17</td><td>Lynx eye digital marketing</td><td>Monthly charges</td><td>Digital Marketing</td><td>₹30,000</td></tr>
+                    <tr><td>2026-09-23</td><td>Meta</td><td>Ad payment</td><td>Paid Advertising</td><td>₹36,000</td></tr>
+                    <tr><td>2026-09-24</td><td>Shopify</td><td>E-commerce Platform Fee</td><td>IT & Hosting</td><td>₹1,508</td></tr>
+                    <tr><td>2026-09-25</td><td>Vista Print</td><td>Hang tags and stickers with QR</td><td>Packaging Supplies</td><td>₹2,700</td></tr>
+                    <tr><td>2026-09-25</td><td>Sharadotsava</td><td>Mannequins & Stands</td><td>Events & Exhibition</td><td>₹5,000</td></tr>
+                    <tr><td>2026-09-25</td><td>Sharadotsava</td><td>Stall Charges</td><td>Events & Exhibition</td><td>₹30,000</td></tr>
+                    <tr><td>2026-10-02</td><td>Karigar</td><td>Making charges to Shabbir</td><td>Production Cost</td><td>₹2,900</td></tr>
+                    <tr><td>2026-10-02</td><td>Tassels</td><td>Tassels</td><td>Production Cost</td><td>₹1,500</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        const universalDataLabelConfig = {
+            anchor: 'end',
+            align: 'top',
+            color: '#f8fafc',
+            font: { size: 10, weight: 'bold' },
+            formatter: function(value) {
+                if (typeof value === 'number') {
+                    if (value >= 1000) return '₹' + (value / 1000).toFixed(0) + 'K';
+                    return '₹' + value;
+                }
+                return value;
+            }
+        };
+
+        // Tab 1 Charts
+        new Chart(document.getElementById('monthlyChart'), {
+            type: 'line',
+            data: {
+                labels: ['Nov-25', 'Dec-25', 'Jan-26', 'Feb-26', 'Mar-26', 'Apr-26', 'May-26', 'Jun-26', 'Jul-26', 'Aug-26', 'Sep-26', 'Oct-26'],
+                datasets: [
+                    { label: 'Sales (₹)', data: [17249, 23900, 23196, 28687, 27847, 38189, 77957, 47405, 113677, 78879, 140916, 23844], borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', fill: true },
+                    { label: 'Profit (₹)', data: [11171, 12513, 11017, 13915, 11188, 22425, 38260, 26821, 58698, 41964, 82829, 9844], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    datalabels: { ...universalDataLabelConfig, align: 'top', offset: 2 }
+                },
+                scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' }, suggestedMax: 160000 } }
+            }
+        });
+
+        new Chart(document.getElementById('buyerLocChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Bengaluru', 'Chennai', 'Tokyo', 'London', 'Mumbai', 'USA', 'Hyderabad', 'Singapore'],
+                datasets: [
+                    { label: 'Sales (₹)', data: [239445, 168416, 62986, 52947, 25393, 14647, 13198, 11695], backgroundColor: '#3b82f6' },
+                    { label: 'Profit (₹)', data: [124701, 82518, 34891, 29581, 16225, 7823, 5994, 4859], backgroundColor: '#10b981' }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    datalabels: universalDataLabelConfig
+                },
+                scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' }, suggestedMax: 280000 } }
+            }
+        });
+
+        // DONUT CHART: SAREE = ROYAL BLUE, JEWELLERY = GOLD, SHIRT = PURPLE
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Saree (Sales: ₹4.97L)', 'Jewellery (Sales: ₹1.40L)', 'Shirt (Sales: ₹0.05L)'],
+                datasets: [{ data: [497142, 139854, 4750], backgroundColor: ['#3b82f6', '#d4af37', '#a855f7'] }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { size: 12, weight: 'bold' },
+                        formatter: function(value) { return '₹' + (value / 1000).toFixed(0) + 'K'; }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('sourcingCityChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Kanchipuram', 'Bengaluru', 'Kolkata', 'Hyderabad', 'Online', 'Chennai'],
+                datasets: [{ label: 'Capital Spend (₹)', data: [309452, 170726, 105140, 74772, 56516, 33205], backgroundColor: '#8b5cf6' }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#f8fafc' } }, datalabels: universalDataLabelConfig },
+                scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' }, suggestedMax: 350000 } }
+            }
+        });
+
+        // TAB 2: INVENTORY STATUS (REDUCED GAP BETWEEN BARS)
+        new Chart(document.getElementById('stockStatusChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Saree - Unsold', 'Saree - Sold', 'Jewellery - Unsold', 'Jewellery - Sold', 'Shirt - Unsold', 'Shirt - Sold'],
+                datasets: [{
+                    label: 'Stock Value (₹)',
+                    data: [430619, 251656, 58241, 41709, 21300, 2250],
+                    backgroundColor: ['#f43f5e', '#10b981', '#f43f5e', '#10b981', '#f43f5e', '#10b981'],
+                    categoryPercentage: 0.8, // Tighter bar spacing
+                    barPercentage: 0.9      // Larger bar width
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#f8fafc' } }, datalabels: universalDataLabelConfig },
+                scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' }, suggestedMax: 480000 } }
+            }
+        });
+
+        new Chart(document.getElementById('vendorSpendChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Salammal Silks', 'Diwans Fashionscape', 'Laxmi weaves', 'Sri Lakshmi silks', 'Aadya Collection'],
+                datasets: [{ label: 'Capital Cost (₹)', data: [187968, 66477, 56672, 52070, 48680], backgroundColor: '#3b82f6' }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#f8fafc' } }, datalabels: universalDataLabelConfig },
+                scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' }, suggestedMax: 220000 } }
+            }
+        });
+
+        // TAB 3 CHARTS
+        new Chart(document.getElementById('channelChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Known Direct', 'Website', 'WhatsApp', 'In Store', 'Instagram', 'Sharadotsav', 'Meta Ads'],
+                datasets: [{ data: [368686, 110974, 105387, 28298, 23247, 4750, 498], backgroundColor: ['#a855f7', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#f59e0b', '#64748b'] }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { size: 10, weight: 'bold' },
+                        formatter: function(value) { return value > 20000 ? '₹' + (value / 1000).toFixed(0) + 'K' : ''; }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('topProductsChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Korvai Silks', 'Soft Silks', 'Pure Silk', 'Checks Pure Silk', 'Pink Blue Soft Silk'],
+                datasets: [{ label: 'Sales Revenue (₹)', data: [42900, 26398, 18500, 15999, 14500], backgroundColor: '#a855f7' }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#f8fafc' } }, datalabels: universalDataLabelConfig },
+                scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' }, suggestedMax: 50000 } }
+            }
+        });
+
+        // TAB 4 CHARTS
+        new Chart(document.getElementById('overheadsVendorChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Lynx Eye Digital', 'Meta Direct', 'Sharadotsava', 'Wix Renewal', 'BM Enterprise'],
+                datasets: [{ data: [134800, 108000, 35000, 7150, 6000], backgroundColor: ['#a855f7', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981'] }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { size: 10, weight: 'bold' },
+                        formatter: function(value) { return value >= 6000 ? '₹' + (value / 1000).toFixed(1) + 'K' : ''; }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('overheadsPurposeChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Digital Marketing', 'Paid Advertising', 'Events & Stall', 'IT & Hosting', 'Packaging Supplies'],
+                datasets: [{
+                    label: 'Expense Amount (₹)',
+                    data: [120000, 118000, 35000, 8658, 9250],
+                    backgroundColor: '#f59e0b',
+                    borderColor: '#d97706',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#f8fafc' } }, datalabels: universalDataLabelConfig },
+                scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' }, suggestedMax: 140000 } }
+            }
+        });
+    </script>
+</body>
+</html>
